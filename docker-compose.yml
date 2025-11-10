@@ -8,6 +8,7 @@
 services:
   # Server Service (FastAPI + Socket.IO + Crawling)
   archon-server:
+    restart: unless-stopped
     build:
       context: ./python
       dockerfile: Dockerfile.server
@@ -66,6 +67,7 @@ services:
 
   # Lightweight MCP Server Service (HTTP-based)
   archon-mcp:
+    restart: unless-stopped
     build:
       context: ./python
       dockerfile: Dockerfile.mcp
@@ -112,6 +114,7 @@ services:
 
   # AI Agents Service (ML/Reranking)
   archon-agents:
+    restart: unless-stopped
     profiles:
       - agents  # Only starts when explicitly using --profile agents
     build:
@@ -149,6 +152,7 @@ services:
 
   # Agent Work Orders Service (Independent microservice for workflow execution)
   archon-agent-work-orders:
+    restart: unless-stopped
     profiles:
       - work-orders  # Only starts when explicitly using --profile work-orders
     build:
@@ -201,6 +205,7 @@ services:
 
   # Frontend
   archon-frontend:
+    restart: unless-stopped
     build: ./archon-ui-main
     container_name: archon-ui
     ports:

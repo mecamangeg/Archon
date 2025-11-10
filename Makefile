@@ -5,7 +5,7 @@ SHELL := /bin/bash
 # Docker compose command - prefer newer 'docker compose' plugin over standalone 'docker-compose'
 COMPOSE ?= $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
 
-.PHONY: help dev dev-docker dev-docker-full dev-work-orders dev-hybrid-work-orders stop test test-fe test-be lint lint-fe lint-be clean install check agent-work-orders
+.PHONY: help dev dev-docker dev-docker-full dev-work-orders dev-hybrid-work-orders stop test test-fe test-be lint lint-fe lint-be clean install check agent-work-orders health-check quick-test
 
 help:
 	@echo "Archon Development Commands"
@@ -23,6 +23,8 @@ help:
 	@echo "  make lint                   - Run all linters"
 	@echo "  make lint-fe                - Run frontend linter only"
 	@echo "  make lint-be                - Run backend linter only"
+	@echo "  make health-check           - Run comprehensive health check"
+	@echo "  make quick-test             - Run quick environment test"
 	@echo "  make clean                  - Remove containers and volumes"
 	@echo "  make install                - Install dependencies"
 	@echo "  make check                  - Check environment setup"
@@ -139,6 +141,15 @@ test-fe:
 test-be:
 	@echo "Running backend tests..."
 	@cd python && uv run pytest
+
+# Health checks
+health-check:
+	@echo "Running comprehensive health check..."
+	@cd python && uv run python ../scripts/health-check.py
+
+quick-test:
+	@echo "Running quick test script..."
+	@bash scripts/quick-test.sh
 
 # Run all linters
 lint: lint-fe lint-be
