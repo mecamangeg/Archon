@@ -24,6 +24,7 @@ class EnvironmentConfig:
     supabase_service_key: str
     port: int  # Required - no default
     openai_api_key: str | None = None
+    cohere_api_key: str | None = None
     host: str = "0.0.0.0"
     transport: str = "sse"
 
@@ -140,6 +141,9 @@ def load_environment_config() -> EnvironmentConfig:
     # OpenAI API key is optional at startup - can be set via API
     openai_api_key = os.getenv("OPENAI_API_KEY")
 
+    # Cohere API key is optional - used for reranking if configured
+    cohere_api_key = os.getenv("COHERE_API_KEY")
+
     # Required environment variables for database access
     supabase_url = os.getenv("SUPABASE_URL")
     if not supabase_url:
@@ -204,6 +208,7 @@ def load_environment_config() -> EnvironmentConfig:
 
     return EnvironmentConfig(
         openai_api_key=openai_api_key,
+        cohere_api_key=cohere_api_key,
         supabase_url=supabase_url,
         supabase_service_key=supabase_service_key,
         host=host,

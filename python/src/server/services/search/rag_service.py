@@ -6,7 +6,7 @@ It combines multiple RAG strategies in a pipeline fashion:
 
 1. Base vector search
 2. + Hybrid search (if enabled) - combines vector + keyword
-3. + Reranking (if enabled) - reorders results using CrossEncoder
+3. + Reranking (if enabled) - reorders results using CrossEncoder or Cohere
 4. + Agentic RAG (if enabled) - enhanced code example search
 
 Multiple strategies can be enabled simultaneously and work together.
@@ -22,6 +22,7 @@ from .agentic_rag_strategy import AgenticRAGStrategy
 
 # Import all strategies
 from .base_search_strategy import BaseSearchStrategy
+from .cohere_reranking_strategy import CohereRerankingStrategy
 from .hybrid_search_strategy import HybridSearchStrategy
 from .reranking_strategy import RerankingStrategy
 
@@ -49,14 +50,7 @@ class RAGService:
 
         # Initialize reranking strategy based on settings
         self.reranking_strategy = None
-        use_reranking = self.get_bool_setting("USE_RERANKING", False)
-        if use_reranking:
-            try:
-                self.reranking_strategy = RerankingStrategy()
-                logger.info("Reranking strategy loaded successfully")
-            except Exception as e:
-                logger.warning(f"Failed to load reranking strategy: {e}")
-                self.reranking_strategy = None
+        self._initialize_reranking_strategy()
 
     def get_setting(self, key: str, default: str = "false") -> str:
         """Get a setting from the credential service or fall back to environment variable."""
@@ -83,6 +77,42 @@ class RAGService:
         """Get a boolean setting from credential service."""
         value = self.get_setting(key, "false" if not default else "true")
         return value.lower() in ("true", "1", "yes", "on")
+
+    def _initialize_reranking_strategy(self):
+        """Initialize the appropriate reranking strategy based on configuration."""
+        use_reranking = self.get_bool_setting("USE_RERANKING", False)
+        if not use_reranking:
+            logger.info("Reranking disabled")
+            return
+
+        # Check if Cohere reranking is explicitly enabled
+        use_cohere = self.get_bool_setting("USE_COHERE_RERANKING", False)
+
+        if use_cohere:
+            # Try to initialize Cohere reranking
+            try:
+                api_key = self.get_setting("COHERE_API_KEY")
+                if not api_key:
+                    logger.warning("USE_COHERE_RERANKING is enabled but COHERE_API_KEY is not set")
+                    return
+
+                model_name = self.get_setting("COHERE_RERANK_MODEL", "rerank-english-v3.0")
+                self.reranking_strategy = CohereRerankingStrategy(
+                    api_key=api_key,
+                    model_name=model_name
+                )
+                logger.info(f"Cohere reranking strategy loaded successfully (model: {model_name})")
+            except Exception as e:
+                logger.warning(f"Failed to load Cohere reranking strategy: {e}")
+                self.reranking_strategy = None
+        else:
+            # Use CrossEncoder reranking (default)
+            try:
+                self.reranking_strategy = RerankingStrategy()
+                logger.info("CrossEncoder reranking strategy loaded successfully")
+            except Exception as e:
+                logger.warning(f"Failed to load CrossEncoder reranking strategy: {e}")
+                self.reranking_strategy = None
 
     async def search_documents(
         self,

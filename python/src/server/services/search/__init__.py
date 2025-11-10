@@ -9,6 +9,7 @@ from .agentic_rag_strategy import AgenticRAGStrategy
 
 # Strategy implementations
 from .base_search_strategy import BaseSearchStrategy
+from .cohere_reranking_strategy import CohereRerankingStrategy
 from .hybrid_search_strategy import HybridSearchStrategy
 from .rag_service import RAGService
 from .reranking_strategy import RerankingStrategy
@@ -20,5 +21,6 @@ __all__ = [
     "BaseSearchStrategy",
     "HybridSearchStrategy",
     "RerankingStrategy",
+    "CohereRerankingStrategy",
     "AgenticRAGStrategy",
 ]
