@@ -118,7 +118,7 @@ async def get_agent_credentials(request: Request) -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error retrieving agent credentials: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve credentials")
+        raise HTTPException(status_code=500, detail="Failed to retrieve credentials") from e
 
 
 @router.get("/credentials/mcp")
@@ -144,4 +144,4 @@ async def get_mcp_credentials(request: Request) -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error retrieving MCP credentials: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve credentials")
+        raise HTTPException(status_code=500, detail="Failed to retrieve credentials") from e

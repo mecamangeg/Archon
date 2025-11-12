@@ -52,14 +52,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Import Logfire configuration
-from src.server.config.logfire_config import mcp_logger, setup_logfire
+# Import Logfire configuration after logging setup
+from src.server.config.logfire_config import mcp_logger, setup_logfire  # noqa: E402
 
 # Import service client for HTTP calls
-from src.server.services.mcp_service_client import get_mcp_service_client
+from src.server.services.mcp_service_client import get_mcp_service_client  # noqa: E402
 
 # Import session management
-from src.server.services.mcp_session_manager import get_session_manager
+from src.server.services.mcp_session_manager import get_session_manager  # noqa: E402
 
 # Global initialization lock and flag
 _initialization_lock = threading.Lock()

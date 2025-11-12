@@ -25,15 +25,15 @@ from ..utils.etag_utils import check_etag, generate_etag
 
 logger = get_logger(__name__)
 
-# Service imports
-from ..services.projects import (
+# Service imports after logger setup
+from ..services.projects import (  # noqa: E402
     ProjectCreationService,
     ProjectService,
     SourceLinkingService,
     TaskService,
 )
-from ..services.projects.document_service import DocumentService
-from ..services.projects.versioning_service import VersioningService
+from ..services.projects.document_service import DocumentService  # noqa: E402
+from ..services.projects.versioning_service import VersioningService  # noqa: E402
 
 # Using HTTP polling for real-time updates
 
