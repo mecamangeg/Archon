@@ -30,6 +30,7 @@ from ..services.search.rag_service import RAGService
 from ..services.storage import DocumentStorageService
 from ..utils import get_supabase_client
 from ..utils.document_processing import extract_text_from_document
+from ..utils.progress.progress_tracker import ProgressTracker
 
 # Get logger for this module
 logger = get_logger(__name__)

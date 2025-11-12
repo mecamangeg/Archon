@@ -9,6 +9,7 @@ import os
 from typing import Any
 
 from ...config.logfire_config import safe_span, search_logger
+from ..credential_service import credential_service
 from ..embeddings.contextual_embedding_service import generate_contextual_embeddings_batch
 from ..embeddings.embedding_service import create_embeddings_batch
 

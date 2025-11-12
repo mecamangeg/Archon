@@ -271,7 +271,7 @@ def extract_code_blocks(markdown_content: str, min_length: int = None) -> list[d
         enable_diagram_filtering = (
             _get_setting_fallback("ENABLE_DIAGRAM_FILTERING", "true").lower() == "true"
         )
-        (
+        enable_contextual_length = (
             _get_setting_fallback("ENABLE_CONTEXTUAL_LENGTH", "true").lower() == "true"
         )
         context_window_size = int(_get_setting_fallback("CONTEXT_WINDOW_SIZE", "1000"))
@@ -1040,7 +1040,7 @@ async def generate_code_summaries_batch(
                 max_workers = int(credential_service._cache["CODE_SUMMARY_MAX_WORKERS"])
             else:
                 max_workers = int(os.getenv("CODE_SUMMARY_MAX_WORKERS", "3"))
-        except:
+        except (ValueError, TypeError, KeyError):
             max_workers = 3  # Default fallback
 
     search_logger.info(
