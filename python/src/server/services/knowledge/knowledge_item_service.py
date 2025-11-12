@@ -110,17 +110,20 @@ class KnowledgeItemService:
                         first_urls[item["source_id"]] = item["url"]
 
                 # Get code example counts per source - NO CONTENT, just counts!
-                # Fetch counts individually for each source
-                for source_id in source_ids:
+                # Optimized: Fetch all counts in a single query to avoid N+1 problem
+                if source_ids:
                     count_result = (
                         self.supabase.from_("archon_code_examples")
-                        .select("id", count="exact", head=True)
-                        .eq("source_id", source_id)
+                        .select("source_id")
+                        .in_("source_id", source_ids)
                         .execute()
                     )
-                    code_example_counts[source_id] = (
-                        count_result.count if hasattr(count_result, "count") else 0
-                    )
+
+                    # Group by source_id and count in Python
+                    for item in count_result.data or []:
+                        sid = item.get("source_id")
+                        if sid:
+                            code_example_counts[sid] = code_example_counts.get(sid, 0) + 1
 
                 # Ensure all sources have a count (default to 0)
                 for source_id in source_ids:
