@@ -28,3 +28,60 @@ UAT/
 
 # Local release notes testing
 release-notes-*.md
+
+# Session summaries and reports
+SESSION_SUMMARY_*.md
+*_STARTUP_GUIDE.md
+
+# Troubleshooting and feature requests
+TROUBLESHOOTING*/
+FEATURE-REQUEST-*.md
+
+# Tech stack documentation (local)
+archon-tech-stack-*.md
+
+# Windows artifacts
+NUL
+
+# Local scripts and utilities
+start-archon.bat
+upload-to-rag.py
+
+# AI assistant and TTS files
+ai-assistant-text2speech/
+
+# Tech stack documentation directory
+tech-stack-docs/
+
+# Local documentation and notes
+Butler*.txt
+hello_world.py
+multi-site-test.md
+
+# Backup files
+*.backup
+
+# Local scripts
+scripts/
+
+# Python documentation and tests (if local)
+python/DOCS/
+python/scripts/
+
+# Test and development files in python/
+python/requirements-health.txt
+python/tests/api/
+python/tests/mcp/
+python/tests/services/
+
+# Local Claude documentation
+claude-full-docs.md
+llms-txt-report-*.md
+
+# Frontend backup and development files
+archon-ui-main/src/**/*.backup
+archon-ui-main/src/**/*.tsx.backup
+archon-ui-main/src/**/*.ts.backup
+
+# Docs directory files (if not part of official docs)
+docs/docs/*.mdx
