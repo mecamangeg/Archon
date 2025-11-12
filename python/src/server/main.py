@@ -29,6 +29,7 @@ from .api_routes.ollama_api import router as ollama_router
 from .api_routes.pages_api import router as pages_router
 from .api_routes.progress_api import router as progress_router
 from .api_routes.projects_api import router as projects_router
+from .api_routes.projects_sync_api import router as projects_sync_router
 from .api_routes.providers_api import router as providers_router
 from .api_routes.version_api import router as version_router
 
@@ -188,6 +189,7 @@ app.include_router(knowledge_router)
 app.include_router(pages_router)
 app.include_router(ollama_router)
 app.include_router(projects_router)
+app.include_router(projects_sync_router)  # Project sync API routes
 app.include_router(progress_router)
 app.include_router(agent_chat_router)
 app.include_router(agent_work_orders_router)  # Proxy to independent agent work orders service

@@ -11,6 +11,7 @@ import { AddKnowledgeDialog } from "../components/AddKnowledgeDialog";
 import { KnowledgeHeader } from "../components/KnowledgeHeader";
 import { KnowledgeList } from "../components/KnowledgeList";
 import { useKnowledgeSummaries } from "../hooks/useKnowledgeQueries";
+import { useSemanticSearch } from "../hooks/useSemanticSearch";
 import { KnowledgeInspector } from "../inspector/components/KnowledgeInspector";
 import type { KnowledgeItem, KnowledgeItemsFilter } from "../types";
 
@@ -18,6 +19,7 @@ export const KnowledgeView = () => {
   // View state
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<"simple" | "semantic">("simple");
   const [typeFilter, setTypeFilter] = useState<"all" | "technical" | "business">("all");
 
   // Dialog state
@@ -46,9 +48,60 @@ export const KnowledgeView = () => {
   // Fetch knowledge summaries (no automatic polling!)
   const { data, isLoading, error, refetch, setActiveCrawlIds, activeOperations } = useKnowledgeSummaries(filter);
 
-  const knowledgeItems = data?.items || [];
-  const totalItems = data?.total || 0;
+  // Semantic search (only when mode is semantic and query exists)
+  const {
+    data: semanticData,
+    isLoading: semanticLoading,
+    error: semanticError,
+  } = useSemanticSearch({
+    query: searchQuery,
+    enabled: searchMode === "semantic" && searchQuery.trim().length > 0,
+    matchCount: 20,
+  });
+
+  // Determine which items to display based on search mode
+  let knowledgeItems = data?.items || [];
+  let totalItems = data?.total || 0;
+
+  // If semantic search is active and has results, group by source and filter items
+  if (searchMode === "semantic" && semanticData?.results && semanticData.results.length > 0) {
+    try {
+      // Extract unique source_ids from semantic results
+      const semanticSourceIds = new Set(
+        semanticData.results.map((result) => result.source_id).filter(Boolean)
+      );
+
+      // Filter knowledge items to only show those with semantic matches
+      knowledgeItems = knowledgeItems.filter((item) => semanticSourceIds.has(item.source_id));
+      totalItems = knowledgeItems.length;
+
+      // Add relevance scores to items (average similarity from all chunks of that source)
+      knowledgeItems = knowledgeItems.map((item) => {
+        const itemChunks = semanticData.results.filter(
+          (result) => result.source_id === item.source_id
+        );
+        
+        // Calculate average similarity, default to 0 if no chunks found
+        const avgSimilarity = itemChunks.length > 0
+          ? itemChunks.reduce((sum, chunk) => sum + (chunk.similarity_score || 0), 0) / itemChunks.length
+          : 0;
+
+        return {
+          ...item,
+          relevanceScore: avgSimilarity,
+        };
+      });
+
+      // Sort by relevance (highest first)
+      knowledgeItems.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+    } catch (error) {
+      console.error('Error processing semantic search results:', error);
+      // Fall back to showing all items without filtering if processing fails
+    }
+  }
   const hasActiveOperations = activeOperations.length > 0;
+  const displayLoading = searchMode === "semantic" ? semanticLoading : isLoading;
+  const displayError = searchMode === "semantic" ? semanticError : error;
 
   // Toast notifications
   const { showToast } = useToast();
@@ -123,9 +176,11 @@ export const KnowledgeView = () => {
       {/* Header */}
       <KnowledgeHeader
         totalItems={totalItems}
-        isLoading={isLoading}
+        isLoading={displayLoading}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        searchMode={searchMode}
+        onSearchModeChange={setSearchMode}
         typeFilter={typeFilter}
         onTypeFilterChange={setTypeFilter}
         viewMode={viewMode}
@@ -153,8 +208,8 @@ export const KnowledgeView = () => {
         <KnowledgeList
           items={knowledgeItems}
           viewMode={viewMode}
-          isLoading={isLoading}
-          error={error}
+          isLoading={displayLoading}
+          error={displayError}
           onRetry={refetch}
           onViewDocument={handleViewDocument}
           onViewCodeExamples={handleViewCodeExamples}

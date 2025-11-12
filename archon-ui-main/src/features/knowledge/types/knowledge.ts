@@ -80,6 +80,7 @@ export interface DocumentChunk {
   section?: string; // formatted headers for display
   source_type?: string;
   knowledge_type?: string;
+  similarity_score?: number; // Semantic search relevance score (0-1)
   // Original metadata field (for backward compatibility)
   metadata?: DocumentChunkMetadata;
 }
@@ -152,6 +153,9 @@ export interface SearchOptions {
   knowledge_type?: "technical" | "business";
   sources?: string[];
   limit?: number;
+  match_count?: number;
+  source_id?: string;
+  return_mode?: "pages" | "chunks";
 }
 
 // UI-specific types

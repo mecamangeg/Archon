@@ -384,3 +384,85 @@ class ProjectService:
         except Exception as e:
             logger.error(f"Error updating project: {e}")
             return False, {"error": f"Error updating project: {str(e)}"}
+
+    async def update_project_sync_status(
+        self,
+        project_id: str,
+        status: str,
+        error_message: str = None,
+        last_sync_at: datetime = None
+    ) -> None:
+        """
+        Update project sync status (used by sync service).
+
+        Args:
+            project_id: Project UUID
+            status: Sync status ('idle', 'syncing', 'completed', 'error')
+            error_message: Optional error message if status is 'error'
+            last_sync_at: Optional timestamp of last successful sync
+        """
+        try:
+            update_data = {
+                "sync_status": status,
+                "updated_at": datetime.now().isoformat()
+            }
+
+            if last_sync_at:
+                update_data["last_sync_at"] = last_sync_at.isoformat()
+
+            if error_message:
+                update_data["last_sync_error"] = error_message
+            elif status == "completed":
+                # Clear error message on successful completion
+                update_data["last_sync_error"] = None
+
+            self.supabase_client.table("archon_projects").update(update_data).eq("id", project_id).execute()
+
+            logger.info(f"Updated sync status for project {project_id}: {status}")
+
+        except Exception as e:
+            logger.error(f"Error updating sync status for project {project_id}: {e}")
+            raise
+
+    async def batch_update_sync_enabled(
+        self,
+        project_ids: list[str],
+        enabled: bool
+    ) -> dict[str, int]:
+        """
+        Batch update auto_sync_enabled for multiple projects (parallel optimized).
+
+        Args:
+            project_ids: List of project UUIDs to update
+            enabled: Enable or disable sync
+
+        Returns:
+            Dict with success and failure counts
+        """
+        import asyncio
+
+        async def update_single(project_id: str) -> bool:
+            """Update single project, return True if successful"""
+            try:
+                self.supabase_client.table("archon_projects").update({
+                    "auto_sync_enabled": enabled,
+                    "updated_at": datetime.now().isoformat()
+                }).eq("id", project_id).execute()
+                return True
+            except Exception as e:
+                logger.error(f"Failed to update project {project_id}: {e}")
+                return False
+
+        # Execute updates in parallel
+        results = await asyncio.gather(*[update_single(pid) for pid in project_ids])
+
+        success_count = sum(1 for r in results if r)
+        failure_count = len(results) - success_count
+
+        logger.info(f"Batch sync update: {success_count} succeeded, {failure_count} failed")
+
+        return {
+            "success_count": success_count,
+            "failure_count": failure_count,
+            "total": len(project_ids)
+        }

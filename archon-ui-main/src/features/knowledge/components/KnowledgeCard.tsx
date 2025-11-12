@@ -25,7 +25,7 @@ import { KnowledgeCardTitle } from "./KnowledgeCardTitle";
 import { KnowledgeCardType } from "./KnowledgeCardType";
 
 interface KnowledgeCardProps {
-  item: KnowledgeItem;
+  item: KnowledgeItem & { relevanceScore?: number };
   onViewDocument: () => void;
   onViewCodeExamples?: () => void;
   onExport?: () => void;
@@ -149,6 +149,14 @@ export const KnowledgeCard: React.FC<KnowledgeCardProps> = ({
                 </div>
               </SimpleTooltip>
               <KnowledgeCardType sourceId={item.source_id} knowledgeType={item.knowledge_type} />
+              {/* Relevance Score Badge (shown for semantic search results) */}
+              {item.relevanceScore !== undefined && (
+                <SimpleTooltip content={"Semantic relevance score (0-1)"}>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-cyan-100 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/20">
+                    <span className="font-mono">{(item.relevanceScore * 100).toFixed(0)}%</span>
+                  </div>
+                </SimpleTooltip>
+              )}
             </div>
 
             {/* Actions */}
@@ -181,6 +189,12 @@ export const KnowledgeCard: React.FC<KnowledgeCardProps> = ({
               description={item.metadata?.description}
               accentColor={getAccentColorName()}
             />
+            {/* Source ID */}
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/50 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">
+                ID: {item.source_id}
+              </span>
+            </div>
             <OptimisticIndicator isOptimistic={optimistic} className="mt-2" />
           </div>
 

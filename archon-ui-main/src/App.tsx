@@ -7,6 +7,7 @@ import { KnowledgeBasePage } from './pages/KnowledgeBasePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { MCPPage } from './pages/MCPPage';
 import { OnboardingPage } from './pages/OnboardingPage';
+import { SemanticSearchPage } from './pages/SemanticSearchPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './features/ui/components/ToastProvider';
@@ -16,6 +17,7 @@ import { ProjectPage } from './pages/ProjectPage';
 import StyleGuidePage from './pages/StyleGuidePage';
 import { AgentWorkOrdersPage } from './pages/AgentWorkOrdersPage';
 import { AgentWorkOrderDetailPage } from './pages/AgentWorkOrderDetailPage';
+import { ArchonSkillPage } from './pages/ArchonSkillPage';
 import { DisconnectScreenOverlay } from './components/DisconnectScreenOverlay';
 import { ErrorBoundaryWithBugReport } from './components/bug-report/ErrorBoundaryWithBugReport';
 import { MigrationBanner } from './components/ui/MigrationBanner';
@@ -29,7 +31,9 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<KnowledgeBasePage />} />
+      <Route path="/archon-skill" element={<ArchonSkillPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route path="/semantic-search" element={<SemanticSearchPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="/mcp" element={<MCPPage />} />
       {styleGuideEnabled ? (

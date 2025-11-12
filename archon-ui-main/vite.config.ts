@@ -365,6 +365,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           target: `http://${proxyHost}:${port}`,
           changeOrigin: true,
           secure: false,
+          timeout: 70000, // 70 second timeout (longer than health check's 60s timeout to prevent proxy-level timeouts)
           configure: (proxy: any, options: any) => {
             proxy.on('error', (err: Error, req: any, res: any) => {
               console.log('🚨 [VITE PROXY ERROR]:', err.message);

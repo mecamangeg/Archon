@@ -3,7 +3,7 @@
  * Contains search, filters, and view controls
  */
 
-import { Asterisk, BookOpen, Briefcase, Grid, List, Plus, Search, Terminal } from "lucide-react";
+import { Asterisk, BookOpen, Briefcase, Filter, Grid, List, Plus, Search, Sparkles, Terminal } from "lucide-react";
 import { Button, Input, ToggleGroup, ToggleGroupItem } from "../../ui/primitives";
 import { cn } from "../../ui/primitives/styles";
 
@@ -12,6 +12,8 @@ interface KnowledgeHeaderProps {
   isLoading: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  searchMode: "simple" | "semantic";
+  onSearchModeChange: (mode: "simple" | "semantic") => void;
   typeFilter: "all" | "technical" | "business";
   onTypeFilterChange: (type: "all" | "technical" | "business") => void;
   viewMode: "grid" | "table";
@@ -24,6 +26,8 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
   isLoading,
   searchQuery,
   onSearchChange,
+  searchMode,
+  onSearchModeChange,
   typeFilter,
   onTypeFilterChange,
   viewMode,
@@ -92,6 +96,32 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
           </ToggleGroupItem>
         </ToggleGroup>
 
+        {/* Search Mode Toggle */}
+        <ToggleGroup
+          type="single"
+          size="sm"
+          value={searchMode}
+          onValueChange={(v) => v && onSearchModeChange(v as "simple" | "semantic")}
+          aria-label="Search mode"
+        >
+          <ToggleGroupItem
+            value="simple"
+            aria-label="Simple search"
+            title="Simple search (title, tags)"
+            className="flex items-center justify-center"
+          >
+            <Filter className="w-4 h-4" aria-hidden="true" />
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="semantic"
+            aria-label="Semantic search"
+            title="Semantic search (AI-powered)"
+            className="flex items-center justify-center"
+          >
+            <Sparkles className="w-4 h-4" aria-hidden="true" />
+          </ToggleGroupItem>
+        </ToggleGroup>
+
         {/* View Mode Toggle */}
         <div className="flex gap-1 p-1 bg-black/30 rounded-lg border border-white/10">
           <Button
@@ -127,6 +157,21 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
             <List className="w-4 h-4" aria-hidden="true" />
           </Button>
         </div>
+
+        {/* Spacer to push Semantic Search to the right */}
+        <div className="flex-1" />
+
+        {/* Semantic Search Lab Link */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => window.location.href = '/semantic-search'}
+          className="flex items-center gap-2 px-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 hover:text-cyan-300 transition-all"
+          title="Open Semantic Search Lab with advanced parameters"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span className="text-sm font-medium">Semantic Search Lab</span>
+        </Button>
       </div>
     </div>
   );

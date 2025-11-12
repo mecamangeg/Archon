@@ -1,4 +1,4 @@
-import { BookOpen, Bot, Palette, Settings } from "lucide-react";
+import { BookOpen, Bot, Palette, Settings, Brain, Sparkles } from "lucide-react";
 import type React from "react";
 import { Link, useLocation } from "react-router-dom";
 // TEMPORARY: Use old SettingsContext until settings are migrated
@@ -29,9 +29,21 @@ export function Navigation({ className }: NavigationProps) {
   // Navigation items configuration
   const navigationItems: NavigationItem[] = [
     {
+      path: "/archon-skill",
+      icon: <Brain className="h-5 w-5" />,
+      label: "Archon-Skill",
+      enabled: true,
+    },
+    {
       path: "/",
       icon: <BookOpen className="h-5 w-5" />,
       label: "Knowledge Base",
+      enabled: true,
+    },
+    {
+      path: "/semantic-search",
+      icon: <Sparkles className="h-5 w-5" />,
+      label: "Semantic Search Lab",
       enabled: true,
     },
     {
