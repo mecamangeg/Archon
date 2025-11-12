@@ -74,14 +74,14 @@ export async function callAPIWithETag<T = unknown>(endpoint: string, options: Re
     }
 
     // Make the request with timeout
-    // NOTE: Increased to 20s due to database performance issues with large DELETE operations
-    // Root cause: Sequential scan on crawled_pages table when deleting sources with 7K+ rows
-    // takes 13+ seconds. This is a temporary fix until we implement batch deletion.
+    // NOTE: Increased to 60s due to Windows Vite proxy latency issues
+    // Root cause: Windows Docker Desktop + Vite proxy combination can take 15-20+ seconds per request
+    // Also handles database performance issues with large DELETE operations (13+ seconds)
     // See: DELETE FROM archon_crawled_pages WHERE source_id = '9529d5dabe8a726a' (7,073 rows)
     const response = await fetch(fullUrl, {
       ...options,
       headers,
-      signal: options.signal ?? AbortSignal.timeout(20000), // 20 second timeout (was 10s)
+      signal: options.signal ?? AbortSignal.timeout(60000), // 60 second timeout (Windows Vite proxy + DB operations)
     });
 
     // Handle errors

@@ -129,7 +129,7 @@ export const knowledgeService = {
     const response = await fetch(uploadUrl, {
       method: "POST",
       body: formData,
-      signal: AbortSignal.timeout(30000), // 30 second timeout for file uploads
+      signal: AbortSignal.timeout(90000), // 90 second timeout for file uploads (Windows Vite proxy + large files)
     });
 
     if (!response.ok) {
