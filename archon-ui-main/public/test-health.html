@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Health Check Test</title>
+</head>
+<body>
+    <h1>Health Check Test</h1>
+    <button onclick="testHealth()">Test /api/health</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testHealth() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing...\n';
+
+            try {
+                const start = Date.now();
+
+                // Test without timeout first
+                output.textContent += 'Test 1: Simple fetch...\n';
+                const response1 = await fetch('/api/health');
+                const data1 = await response1.json();
+                const time1 = Date.now() - start;
+                output.textContent += `✓ Success in ${time1}ms: ${JSON.stringify(data1)}\n\n`;
+
+                // Test with timeout
+                output.textContent += 'Test 2: Fetch with 10s timeout...\n';
+                const start2 = Date.now();
+                const response2 = await fetch('/api/health', {
+                    signal: AbortSignal.timeout(10000)
+                });
+                const data2 = await response2.json();
+                const time2 = Date.now() - start2;
+                output.textContent += `✓ Success in ${time2}ms: ${JSON.stringify(data2)}\n`;
+
+            } catch (error) {
+                output.textContent += `✗ Error: ${error.name} - ${error.message}\n`;
+                console.error('Test failed:', error);
+            }
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', testHealth);
+    </script>
+</body>
+</html>

@@ -34,7 +34,7 @@ class ServerHealthService {
       // Use the proxied /api/health endpoint which works in both dev and Docker
       const response = await fetch('/api/health', {
         method: 'GET',
-        signal: AbortSignal.timeout(10000) // 10 second timeout (increased for heavy operations)
+        signal: AbortSignal.timeout(60000) // 60 second timeout (Vite proxy can be slow on Windows)
       });
       
       if (response.ok) {
