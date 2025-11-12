@@ -83,10 +83,10 @@ class EmbeddingProviderAdapter(ABC):
 
 class OpenAICompatibleEmbeddingAdapter(EmbeddingProviderAdapter):
     """Adapter for providers using the OpenAI embeddings API shape."""
-    
+
     def __init__(self, client: Any):
         self._client = client
-    
+
     async def create_embeddings(
         self,
         texts: list[str],
@@ -99,7 +99,7 @@ class OpenAICompatibleEmbeddingAdapter(EmbeddingProviderAdapter):
         }
         if dimensions is not None:
             request_args["dimensions"] = dimensions
-            
+
         response = await self._client.embeddings.create(**request_args)
         return [item.embedding for item in response.data]
 
@@ -424,7 +424,7 @@ async def create_embeddings_batch(
                                     if "insufficient_quota" in error_message:
                                         # Quota exhausted is critical - stop everything
                                         tokens_so_far = total_tokens_used - batch_tokens
-                                        cost_so_far = (tokens_so_far / 1_000_000) * 0.02
+                                        (tokens_so_far / 1_000_000) * 0.02
 
                                         search_logger.error(
                                             f"⚠️ QUOTA EXHAUSTED at batch {batch_index}! "

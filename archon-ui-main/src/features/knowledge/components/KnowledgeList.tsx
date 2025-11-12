@@ -5,6 +5,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { memo } from "react";
 import type { ActiveOperation } from "../../progress/types";
 import { Button } from "../../ui/primitives";
 import type { KnowledgeItem } from "../types";
@@ -48,7 +49,7 @@ const containerVariants = {
   },
 };
 
-export const KnowledgeList: React.FC<KnowledgeListProps> = ({
+export const KnowledgeList: React.FC<KnowledgeListProps> = memo(({
   items,
   viewMode,
   isLoading,
@@ -181,4 +182,6 @@ export const KnowledgeList: React.FC<KnowledgeListProps> = ({
       </AnimatePresence>
     </motion.div>
   );
-};
+});
+
+KnowledgeList.displayName = "KnowledgeList";

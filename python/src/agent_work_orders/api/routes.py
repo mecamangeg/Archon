@@ -4,8 +4,9 @@ FastAPI routes for agent work orders.
 """
 
 import asyncio
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from sse_starlette.sse import EventSourceResponse
@@ -48,23 +49,23 @@ _workflow_tasks: dict[str, asyncio.Task] = {}
 
 def _create_task_done_callback(agent_work_order_id: str) -> Callable[[asyncio.Task], None]:
     """Create a done callback for workflow tasks
-    
+
     Logs exceptions, updates work order status, and removes task from registry.
     Note: This callback is synchronous but schedules async operations for status updates.
-    
+
     Args:
         agent_work_order_id: Work order ID to track
     """
     def on_task_done(task: asyncio.Task) -> None:
         """Callback invoked when workflow task completes
-        
+
         Inspects task.exception() to determine if workflow succeeded or failed,
         logs appropriately, and updates work order status.
         """
         try:
             # Check if task raised an exception
             exception = task.exception()
-            
+
             if exception is None:
                 # Task completed successfully
                 logger.info(
@@ -85,7 +86,7 @@ def _create_task_done_callback(agent_work_order_id: str) -> Callable[[asyncio.Ta
                     exception_message=str(exception),
                     exc_info=True,
                 )
-                
+
                 # Schedule async operation to update work order status if needed
                 # (execute_workflow_with_error_handling may have already done this)
                 async def update_status_if_needed() -> None:
@@ -114,7 +115,7 @@ def _create_task_done_callback(agent_work_order_id: str) -> Callable[[asyncio.Ta
                             original_exception=str(exception),
                             exc_info=True,
                         )
-                
+
                 # Schedule the async status update
                 asyncio.create_task(update_status_if_needed())
         finally:
@@ -124,7 +125,7 @@ def _create_task_done_callback(agent_work_order_id: str) -> Callable[[asyncio.Ta
                 "workflow_task_removed_from_registry",
                 agent_work_order_id=agent_work_order_id,
             )
-    
+
     return on_task_done
 
 
@@ -193,7 +194,7 @@ async def create_agent_work_order(
         # Wrapper function to handle exceptions from workflow execution
         async def execute_workflow_with_error_handling() -> None:
             """Execute workflow and handle any unhandled exceptions
-            
+
             Broad exception handler ensures all exceptions are caught and logged,
             with full context for debugging. Status is updated to FAILED on errors.
             """
@@ -239,10 +240,10 @@ async def create_agent_work_order(
         # Create and track background workflow task
         task = asyncio.create_task(execute_workflow_with_error_handling())
         _workflow_tasks[agent_work_order_id] = task
-        
+
         # Attach done callback to log exceptions and update status
         task.add_done_callback(_create_task_done_callback(agent_work_order_id))
-        
+
         logger.debug(
             "workflow_task_created_and_tracked",
             agent_work_order_id=agent_work_order_id,

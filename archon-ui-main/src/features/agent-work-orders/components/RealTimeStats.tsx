@@ -16,7 +16,7 @@ interface RealTimeStatsProps {
  * Stable empty array reference to prevent infinite re-renders
  * CRITICAL: Never use `|| []` in Zustand selectors - creates new reference each render
  */
-const EMPTY_LOGS: never[] = [];
+const _EMPTY_LOGS: never[] = [];
 
 /**
  * Type guard to narrow LogEntry to one with required step_number and total_steps
@@ -34,7 +34,7 @@ function hasStepInfo(log: LogEntry): log is LogEntryWithSteps {
  * Calculate progress metrics from log entries
  * Used as fallback when no SSE progress data exists (e.g., after refresh)
  */
-function useCalculateProgressFromLogs(logs: LogEntry[]): LiveProgress | null {
+function _useCalculateProgressFromLogs(logs: LogEntry[]): LiveProgress | null {
   return useMemo(() => {
     if (logs.length === 0) return null;
 
@@ -191,7 +191,7 @@ export function RealTimeStats({ workOrderId }: RealTimeStatsProps) {
       return () => disconnectFromLogs(workOrderId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workOrderId]);
+  }, [workOrderId, connectToLogs, disconnectFromLogs]);
 
   /**
    * Update elapsed time every second if work order is running
@@ -234,8 +234,8 @@ export function RealTimeStats({ workOrderId }: RealTimeStatsProps) {
   // Determine status for display
   const status = progress?.status || "running";
   const isRunning = status === "running";
-  const isCompleted = status === "completed";
-  const isFailed = status === "failed";
+  const _isCompleted = status === "completed";
+  const _isFailed = status === "failed";
 
   // Status display configuration
   const statusConfig = {

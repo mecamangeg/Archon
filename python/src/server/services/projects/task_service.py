@@ -218,7 +218,7 @@ class TaskService:
             if search_query:
                 # Split search query into terms
                 search_terms = search_query.lower().split()
-                
+
                 # Build the filter expression for AND-of-ORs
                 # Each term must match in at least one field (OR), and all terms must match (AND)
                 if len(search_terms) == 1:
@@ -472,9 +472,9 @@ class TaskService:
     def get_all_project_task_counts(self) -> tuple[bool, dict[str, dict[str, int]]]:
         """
         Get task counts for all projects in a single optimized query.
-        
+
         Returns task counts grouped by project_id and status.
-        
+
         Returns:
             Tuple of (success, counts_dict) where counts_dict is:
             {"project-id": {"todo": 5, "doing": 2, "review": 3, "done": 10}}

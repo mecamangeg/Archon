@@ -232,7 +232,7 @@ class RAGService:
             page_groups[group_key]["total_similarity"] += result.get("similarity_score", 0.0)
 
         page_results = []
-        for group_key, data in page_groups.items():
+        for _, data in page_groups.items():
             avg_similarity = data["total_similarity"] / data["chunk_matches"]
             match_boost = min(0.2, data["chunk_matches"] * 0.02)
             aggregate_score = avg_similarity * (1 + match_boost)

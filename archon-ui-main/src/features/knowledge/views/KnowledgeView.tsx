@@ -66,36 +66,39 @@ export const KnowledgeView = () => {
   // If semantic search is active and has results, group by source and filter items
   if (searchMode === "semantic" && semanticData?.results && semanticData.results.length > 0) {
     try {
-      // Extract unique source_ids from semantic results
-      const semanticSourceIds = new Set(
-        semanticData.results.map((result) => result.source_id).filter(Boolean)
-      );
+      // Optimized: Pre-group semantic results by source_id to avoid O(n*m) nested filters
+      const scoresBySource = new Map<string, { total: number; count: number }>();
 
-      // Filter knowledge items to only show those with semantic matches
-      knowledgeItems = knowledgeItems.filter((item) => semanticSourceIds.has(item.source_id));
+      for (const result of semanticData.results) {
+        if (result.source_id) {
+          const existing = scoresBySource.get(result.source_id);
+          if (existing) {
+            existing.total += result.similarity_score || 0;
+            existing.count += 1;
+          } else {
+            scoresBySource.set(result.source_id, {
+              total: result.similarity_score || 0,
+              count: 1,
+            });
+          }
+        }
+      }
+
+      // Filter, map, and sort in a single efficient pass
+      knowledgeItems = knowledgeItems
+        .filter((item) => scoresBySource.has(item.source_id))
+        .map((item) => {
+          const scores = scoresBySource.get(item.source_id)!;
+          return {
+            ...item,
+            relevanceScore: scores.total / scores.count,
+          };
+        })
+        .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+
       totalItems = knowledgeItems.length;
-
-      // Add relevance scores to items (average similarity from all chunks of that source)
-      knowledgeItems = knowledgeItems.map((item) => {
-        const itemChunks = semanticData.results.filter(
-          (result) => result.source_id === item.source_id
-        );
-        
-        // Calculate average similarity, default to 0 if no chunks found
-        const avgSimilarity = itemChunks.length > 0
-          ? itemChunks.reduce((sum, chunk) => sum + (chunk.similarity_score || 0), 0) / itemChunks.length
-          : 0;
-
-        return {
-          ...item,
-          relevanceScore: avgSimilarity,
-        };
-      });
-
-      // Sort by relevance (highest first)
-      knowledgeItems.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
     } catch (error) {
-      console.error('Error processing semantic search results:', error);
+      console.error("Error processing semantic search results:", error);
       // Fall back to showing all items without filtering if processing fails
     }
   }

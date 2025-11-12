@@ -286,7 +286,6 @@ def extract_code_blocks(markdown_content: str, min_length: int = None) -> list[d
         max_prose_ratio = 0.15
         min_code_indicators = 3
         enable_diagram_filtering = True
-        enable_contextual_length = True
         context_window_size = 1000
 
     search_logger.debug(f"Extracting code blocks with minimum length: {min_length} characters")
@@ -1041,7 +1040,7 @@ async def generate_code_summaries_batch(
                 max_workers = int(credential_service._cache["CODE_SUMMARY_MAX_WORKERS"])
             else:
                 max_workers = int(os.getenv("CODE_SUMMARY_MAX_WORKERS", "3"))
-        except:
+        except (ValueError, TypeError, KeyError):
             max_workers = 3  # Default fallback
 
     search_logger.info(

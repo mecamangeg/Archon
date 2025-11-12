@@ -5,6 +5,7 @@ These endpoints are meant to be called only by other services in the Archon syst
 not by external clients. They provide internal functionality like credential sharing.
 """
 
+import asyncio
 import logging
 import os
 from typing import Any
@@ -71,36 +72,42 @@ async def get_agent_credentials(request: Request) -> dict[str, Any]:
         raise HTTPException(status_code=403, detail="Access forbidden")
 
     try:
-        # Get credentials needed by agents
+        # Get credentials needed by agents - Optimized: Fetch all in parallel
+        (
+            openai_api_key,
+            openai_model,
+            document_agent_model,
+            rag_agent_model,
+            task_agent_model,
+            agent_rate_limit_enabled,
+            agent_max_retries,
+            log_level,
+        ) = await asyncio.gather(
+            credential_service.get_credential("OPENAI_API_KEY", decrypt=True),
+            credential_service.get_credential("OPENAI_MODEL", default="gpt-4o-mini"),
+            credential_service.get_credential("DOCUMENT_AGENT_MODEL", default="openai:gpt-4o"),
+            credential_service.get_credential("RAG_AGENT_MODEL", default="openai:gpt-4o-mini"),
+            credential_service.get_credential("TASK_AGENT_MODEL", default="openai:gpt-4o"),
+            credential_service.get_credential("AGENT_RATE_LIMIT_ENABLED", default="true"),
+            credential_service.get_credential("AGENT_MAX_RETRIES", default="3"),
+            credential_service.get_credential("LOG_LEVEL", default="INFO"),
+        )
+
         credentials = {
             # OpenAI credentials
-            "OPENAI_API_KEY": await credential_service.get_credential(
-                "OPENAI_API_KEY", decrypt=True
-            ),
-            "OPENAI_MODEL": await credential_service.get_credential(
-                "OPENAI_MODEL", default="gpt-4o-mini"
-            ),
+            "OPENAI_API_KEY": openai_api_key,
+            "OPENAI_MODEL": openai_model,
             # Model configurations
-            "DOCUMENT_AGENT_MODEL": await credential_service.get_credential(
-                "DOCUMENT_AGENT_MODEL", default="openai:gpt-4o"
-            ),
-            "RAG_AGENT_MODEL": await credential_service.get_credential(
-                "RAG_AGENT_MODEL", default="openai:gpt-4o-mini"
-            ),
-            "TASK_AGENT_MODEL": await credential_service.get_credential(
-                "TASK_AGENT_MODEL", default="openai:gpt-4o"
-            ),
+            "DOCUMENT_AGENT_MODEL": document_agent_model,
+            "RAG_AGENT_MODEL": rag_agent_model,
+            "TASK_AGENT_MODEL": task_agent_model,
             # Rate limiting settings
-            "AGENT_RATE_LIMIT_ENABLED": await credential_service.get_credential(
-                "AGENT_RATE_LIMIT_ENABLED", default="true"
-            ),
-            "AGENT_MAX_RETRIES": await credential_service.get_credential(
-                "AGENT_MAX_RETRIES", default="3"
-            ),
+            "AGENT_RATE_LIMIT_ENABLED": agent_rate_limit_enabled,
+            "AGENT_MAX_RETRIES": agent_max_retries,
             # MCP endpoint
             "MCP_SERVICE_URL": f"http://archon-mcp:{os.getenv('ARCHON_MCP_PORT')}",
             # Additional settings
-            "LOG_LEVEL": await credential_service.get_credential("LOG_LEVEL", default="INFO"),
+            "LOG_LEVEL": log_level,
         }
 
         # Filter out None values
@@ -111,7 +118,7 @@ async def get_agent_credentials(request: Request) -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error retrieving agent credentials: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve credentials")
+        raise HTTPException(status_code=500, detail="Failed to retrieve credentials") from e
 
 
 @router.get("/credentials/mcp")
@@ -137,4 +144,4 @@ async def get_mcp_credentials(request: Request) -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error retrieving MCP credentials: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve credentials")
+        raise HTTPException(status_code=500, detail="Failed to retrieve credentials") from e
