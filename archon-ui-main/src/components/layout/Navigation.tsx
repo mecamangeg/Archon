@@ -1,4 +1,4 @@
-import { BookOpen, Bot, Palette, Settings, Brain, Sparkles } from "lucide-react";
+import { BookOpen, Bot, Brain, Palette, Settings, Sparkles } from "lucide-react";
 import type React from "react";
 import { Link, useLocation } from "react-router-dom";
 // TEMPORARY: Use old SettingsContext until settings are migrated

@@ -92,7 +92,7 @@ export function ExecutionLogs({ logs, isLive = false, onClearLogs = () => {} }: 
 
     previousLogsLengthRef.current = currentLogsLength;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logs]);
+  }, [logs, isCleared]);
 
   // Filter logs by level
   const filteredLogs = levelFilter === "all" ? localLogs : localLogs.filter((log) => log.level === levelFilter);
@@ -113,7 +113,7 @@ export function ExecutionLogs({ logs, isLive = false, onClearLogs = () => {} }: 
     if (autoScroll && scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
-  }, [localLogs.length, autoScroll]); // Trigger on new logs, not filtered logs
+  }, [autoScroll]); // Trigger on new logs, not filtered logs
 
   return (
     <div className="border border-white/10 dark:border-gray-700/30 rounded-lg overflow-hidden bg-black/20 dark:bg-white/5 backdrop-blur">

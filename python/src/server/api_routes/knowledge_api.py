@@ -19,7 +19,6 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 # Basic validation - simplified inline version
-
 # Import unified logging
 from ..config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
 from ..services.crawler_manager import get_crawler
@@ -62,7 +61,7 @@ active_crawl_tasks: dict[str, asyncio.Task] = {}
 async def _validate_provider_api_key(provider: str = None) -> None:
     """Validate LLM provider API key before starting operations."""
     logger.info("🔑 Starting API key validation...")
-    
+
     try:
         # Basic provider validation
         if not provider:
@@ -117,7 +116,7 @@ async def _validate_provider_api_key(provider: str = None) -> None:
                     "provider": provider,
                 },
             )
-            
+
         logger.info(f"✅ {provider.title()} API key validation successful")
 
     except HTTPException:
@@ -129,7 +128,7 @@ async def _validate_provider_api_key(provider: str = None) -> None:
         error_str = str(e)
         sanitized_error = ProviderErrorFactory.sanitize_provider_error(error_str, provider or "openai")
         logger.error(f"❌ Caught exception during API key validation: {sanitized_error}")
-        
+
         # Always fail for any exception during validation - better safe than sorry
         logger.error("🚨 API key validation failed - blocking crawl operation")
         raise HTTPException(
@@ -183,7 +182,7 @@ class RagQueryRequest(BaseModel):
 @router.get("/crawl-progress/{progress_id}")
 async def get_crawl_progress(progress_id: str):
     """Get crawl progress for polling.
-    
+
     Returns the current state of a crawl operation.
     Frontend should poll this endpoint to track crawl progress.
     """
@@ -261,12 +260,12 @@ async def get_knowledge_items_summary(
 ):
     """
     Get lightweight summaries of knowledge items.
-    
+
     Returns minimal data optimized for frequent polling:
     - Only counts, no actual document/code content
     - Basic metadata for display
     - Efficient batch queries
-    
+
     Use this endpoint for card displays and frequent polling.
     """
     try:
@@ -369,13 +368,13 @@ async def get_knowledge_item_chunks(
 ):
     """
     Get document chunks for a specific knowledge item with pagination.
-    
+
     Args:
         source_id: The source ID
         domain_filter: Optional domain filter for URLs
         limit: Maximum number of chunks to return (default 20, max 100)
         offset: Number of chunks to skip (for pagination)
-    
+
     Returns:
         Paginated chunks with metadata
     """
@@ -527,12 +526,12 @@ async def get_knowledge_item_code_examples(
 ):
     """
     Get code examples for a specific knowledge item with pagination.
-    
+
     Args:
         source_id: The source ID
         limit: Maximum number of examples to return (default 20, max 100)
         offset: Number of examples to skip (for pagination)
-    
+
     Returns:
         Paginated code examples with metadata
     """
@@ -612,14 +611,14 @@ async def get_knowledge_item_code_examples(
 @router.post("/knowledge-items/{source_id}/refresh")
 async def refresh_knowledge_item(source_id: str):
     """Refresh a knowledge item by re-crawling its URL with the same metadata."""
-    
+
     # Validate API key before starting expensive refresh operation
     logger.info("🔍 About to validate API key for refresh...")
     provider_config = await credential_service.get_active_provider("embedding")
     provider = provider_config.get("provider", "openai")
     await _validate_provider_api_key(provider)
     logger.info("✅ API key validation completed successfully for refresh")
-    
+
     try:
         safe_logfire_info(f"Starting knowledge item refresh | source_id={source_id}")
 
@@ -899,14 +898,14 @@ async def upload_document(
     extract_code_examples: bool = Form(True),
 ):
     """Upload and process a document with progress tracking."""
-    
-    # Validate API key before starting expensive upload operation  
+
+    # Validate API key before starting expensive upload operation
     logger.info("🔍 About to validate API key for upload...")
     provider_config = await credential_service.get_active_provider("embedding")
     provider = provider_config.get("provider", "openai")
     await _validate_provider_api_key(provider)
     logger.info("✅ API key validation completed successfully for upload")
-    
+
     try:
         # DETAILED LOGGING: Track knowledge_type parameter flow
         safe_logfire_info(

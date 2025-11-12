@@ -45,7 +45,7 @@ export function useOperationProgress(
     hasCalledComplete.current = false;
     hasCalledError.current = false;
     consecutiveNotFound.current = 0;
-  }, [progressId]);
+  }, []);
 
   const query = useQuery<ProgressResponse | null>({
     queryKey: progressId ? progressKeys.detail(progressId) : DISABLED_QUERY_KEY,
@@ -245,7 +245,7 @@ export function useMultipleOperations(
     completedIds.current.clear();
     errorIds.current.clear();
     notFoundCounts.current.clear();
-  }, [_progressIdsKey]); // Stable dependency across reorderings
+  }, []); // Stable dependency across reorderings
 
   const queries = useQueries({
     queries: progressIds.map((progressId) => ({

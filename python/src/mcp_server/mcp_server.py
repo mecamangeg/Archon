@@ -29,7 +29,6 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-
 from mcp.server.fastmcp import Context, FastMCP
 
 # Add the project root to Python path for imports
@@ -155,7 +154,7 @@ async def lifespan(server: FastMCP) -> AsyncIterator[ArchonContext]:
         try:
             # Initialize session manager
             logger.info("🔐 Initializing session manager...")
-            session_manager = get_session_manager()
+            get_session_manager()
             logger.info("✓ Session manager initialized")
 
             # Initialize service client for HTTP calls
@@ -221,7 +220,7 @@ IMPORTANT: Always use source_id (not URLs or domain names) for filtering!
 ## 📋 Core Workflow
 
 ### Task Management Cycle
-1. **Get current task**: `list_tasks(task_id="...")` 
+1. **Get current task**: `list_tasks(task_id="...")`
 2. **Search/List tasks**: `list_tasks(query="auth", filter_by="status", filter_value="todo")`
 3. **Mark as doing**: `manage_task("update", task_id="...", status="doing")`
 4. **Research phase**:

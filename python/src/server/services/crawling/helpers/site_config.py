@@ -3,8 +3,8 @@ Site Configuration Helper
 
 Handles site-specific configurations and detection.
 """
-from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
+from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 
 from ....config.logfire_config import get_logger
 
@@ -51,10 +51,10 @@ class SiteConfig:
     def is_documentation_site(url: str) -> bool:
         """
         Check if URL is likely a documentation site that needs special handling.
-        
+
         Args:
             url: URL to check
-            
+
         Returns:
             True if URL appears to be a documentation site
         """
@@ -78,7 +78,7 @@ class SiteConfig:
     def get_markdown_generator():
         """
         Get markdown generator that preserves code blocks.
-        
+
         Returns:
             Configured markdown generator
         """
@@ -102,7 +102,7 @@ class SiteConfig:
     def get_link_pruning_markdown_generator():
         """
         Get markdown generator for the recursive crawling strategy that cleans up pages crawled.
-        
+
         Returns:
             Configured markdown generator
         """

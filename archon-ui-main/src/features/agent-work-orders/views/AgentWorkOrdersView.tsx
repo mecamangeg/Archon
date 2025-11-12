@@ -6,7 +6,7 @@
  */
 
 import { ChevronLeft, ChevronRight, GitBranch, LayoutGrid, List, Plus, Search } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useShallow } from "zustand/shallow";
 import { Button } from "@/features/ui/primitives/button";
@@ -51,7 +51,7 @@ export function AgentWorkOrdersView() {
   // Zustand Modal Actions - Functions are stable, select individually
   const openAddRepoModal = useAgentWorkOrdersStore((s) => s.openAddRepoModal);
   const closeAddRepoModal = useAgentWorkOrdersStore((s) => s.closeAddRepoModal);
-  const openEditRepoModal = useAgentWorkOrdersStore((s) => s.openEditRepoModal);
+  const _openEditRepoModal = useAgentWorkOrdersStore((s) => s.openEditRepoModal);
   const closeEditRepoModal = useAgentWorkOrdersStore((s) => s.closeEditRepoModal);
   const openCreateWorkOrderModal = useAgentWorkOrdersStore((s) => s.openCreateWorkOrderModal);
   const closeCreateWorkOrderModal = useAgentWorkOrdersStore((s) => s.closeCreateWorkOrderModal);

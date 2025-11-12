@@ -67,9 +67,7 @@ export const KnowledgeView = () => {
   if (searchMode === "semantic" && semanticData?.results && semanticData.results.length > 0) {
     try {
       // Extract unique source_ids from semantic results
-      const semanticSourceIds = new Set(
-        semanticData.results.map((result) => result.source_id).filter(Boolean)
-      );
+      const semanticSourceIds = new Set(semanticData.results.map((result) => result.source_id).filter(Boolean));
 
       // Filter knowledge items to only show those with semantic matches
       knowledgeItems = knowledgeItems.filter((item) => semanticSourceIds.has(item.source_id));
@@ -77,14 +75,13 @@ export const KnowledgeView = () => {
 
       // Add relevance scores to items (average similarity from all chunks of that source)
       knowledgeItems = knowledgeItems.map((item) => {
-        const itemChunks = semanticData.results.filter(
-          (result) => result.source_id === item.source_id
-        );
-        
+        const itemChunks = semanticData.results.filter((result) => result.source_id === item.source_id);
+
         // Calculate average similarity, default to 0 if no chunks found
-        const avgSimilarity = itemChunks.length > 0
-          ? itemChunks.reduce((sum, chunk) => sum + (chunk.similarity_score || 0), 0) / itemChunks.length
-          : 0;
+        const avgSimilarity =
+          itemChunks.length > 0
+            ? itemChunks.reduce((sum, chunk) => sum + (chunk.similarity_score || 0), 0) / itemChunks.length
+            : 0;
 
         return {
           ...item,
@@ -95,7 +92,7 @@ export const KnowledgeView = () => {
       // Sort by relevance (highest first)
       knowledgeItems.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
     } catch (error) {
-      console.error('Error processing semantic search results:', error);
+      console.error("Error processing semantic search results:", error);
       // Fall back to showing all items without filtering if processing fails
     }
   }
