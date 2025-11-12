@@ -10,7 +10,7 @@ import type { ActiveOperation } from "../../progress/types";
 import { AddKnowledgeDialog } from "../components/AddKnowledgeDialog";
 import { KnowledgeHeader } from "../components/KnowledgeHeader";
 import { KnowledgeList } from "../components/KnowledgeList";
-import { useKnowledgeSummaries } from "../hooks/useKnowledgeQueries";
+import { useInfiniteKnowledgeSummaries } from "../hooks/useKnowledgeQueries";
 import { useSemanticSearch } from "../hooks/useSemanticSearch";
 import { KnowledgeInspector } from "../inspector/components/KnowledgeInspector";
 import type { KnowledgeItem, KnowledgeItemsFilter } from "../types";
@@ -28,11 +28,8 @@ export const KnowledgeView = () => {
   const [inspectorInitialTab, setInspectorInitialTab] = useState<"documents" | "code">("documents");
 
   // Build filter object for API - memoize to prevent recreating on every render
-  const filter = useMemo<KnowledgeItemsFilter>(() => {
-    const f: KnowledgeItemsFilter = {
-      page: 1,
-      per_page: 100,
-    };
+  const filter = useMemo(() => {
+    const f: Omit<KnowledgeItemsFilter, "page" | "per_page"> = {};
 
     if (searchQuery) {
       f.search = searchQuery;
@@ -45,8 +42,19 @@ export const KnowledgeView = () => {
     return f;
   }, [searchQuery, typeFilter]);
 
-  // Fetch knowledge summaries (no automatic polling!)
-  const { data, isLoading, error, refetch, setActiveCrawlIds, activeOperations } = useKnowledgeSummaries(filter);
+  // Fetch knowledge summaries with infinite scroll - loads 20 items at a time
+  const {
+    items: allItems,
+    total,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+    setActiveCrawlIds,
+    activeOperations,
+  } = useInfiniteKnowledgeSummaries(filter);
 
   // Semantic search (only when mode is semantic and query exists)
   const {
@@ -60,8 +68,8 @@ export const KnowledgeView = () => {
   });
 
   // Determine which items to display based on search mode
-  let knowledgeItems = data?.items || [];
-  let totalItems = data?.total || 0;
+  let knowledgeItems = allItems || [];
+  let totalItems = total || 0;
 
   // If semantic search is active and has results, group by source and filter items
   if (searchMode === "semantic" && semanticData?.results && semanticData.results.length > 0) {
@@ -174,6 +182,28 @@ export const KnowledgeView = () => {
     // TanStack Query will automatically refetch
   };
 
+  // Infinite scroll - load more items when scrolling near the bottom
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -223,6 +253,27 @@ export const KnowledgeView = () => {
             setActiveCrawlIds((prev) => [...prev, progressId]);
           }}
         />
+
+        {/* Infinite scroll trigger - load more when visible */}
+        {hasNextPage && !displayLoading && (
+          <div ref={loadMoreRef} className="flex justify-center py-8">
+            {isFetchingNextPage ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+                Loading more...
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">Scroll to load more</div>
+            )}
+          </div>
+        )}
+
+        {/* Show total count when all items loaded */}
+        {!hasNextPage && knowledgeItems.length > 0 && !displayLoading && (
+          <div className="text-center py-4 text-sm text-gray-500">
+            Showing all {totalItems} {totalItems === 1 ? "item" : "items"}
+          </div>
+        )}
       </div>
 
       {/* Dialogs */}
