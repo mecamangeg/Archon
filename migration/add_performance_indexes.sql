@@ -20,21 +20,18 @@ ON archon_tasks(project_id, status, task_order);
 CREATE INDEX IF NOT EXISTS idx_document_versions_project
 ON archon_document_versions(project_id);
 
--- Index for filtering sources by knowledge_type (used in filters)
-CREATE INDEX IF NOT EXISTS idx_sources_knowledge_type
-ON archon_sources(knowledge_type);
+-- Note: knowledge_type index already exists as idx_archon_sources_knowledge_type
+-- in complete_setup.sql, so we skip it here to avoid duplication
 
--- Index for searching sources by name (supports LIKE queries)
-CREATE INDEX IF NOT EXISTS idx_sources_name_trgm
-ON archon_sources USING gin(name gin_trgm_ops);
+-- Note: Trigram search indexes require pg_trgm extension
+-- Indexes for title and source_display_name already exist in complete_setup.sql
 
 -- Index for code examples by source_id (used when displaying source details)
 CREATE INDEX IF NOT EXISTS idx_code_examples_source
 ON archon_code_examples(source_id);
 
--- Index for documents by source_id (used for chunk counts and queries)
-CREATE INDEX IF NOT EXISTS idx_documents_source
-ON archon_documents(source_id);
+-- Note: Document chunks index already exists as idx_archon_crawled_pages_source_id
+-- in complete_setup.sql, so we skip it here to avoid duplication
 
 -- Verify indexes were created
 SELECT
