@@ -158,20 +158,6 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
           </Button>
         </div>
 
-        {/* Spacer to push Semantic Search to the right */}
-        <div className="flex-1" />
-
-        {/* Semantic Search Lab Link */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => (window.location.href = "/semantic-search")}
-          className="flex items-center gap-2 px-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 hover:text-cyan-300 transition-all"
-          title="Open Semantic Search Lab with advanced parameters"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span className="text-sm font-medium">Semantic Search Lab</span>
-        </Button>
       </div>
     </div>
   );

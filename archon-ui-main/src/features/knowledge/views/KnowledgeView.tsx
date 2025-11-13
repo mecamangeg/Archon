@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useDebounce } from "@/features/shared/hooks/useDebounce";
 import { useToast } from "@/features/shared/hooks/useToast";
 import { CrawlingProgress } from "../../progress/components/CrawlingProgress";
 import type { ActiveOperation } from "../../progress/types";
@@ -22,6 +23,9 @@ export const KnowledgeView = () => {
   const [searchMode, setSearchMode] = useState<"simple" | "semantic">("simple");
   const [typeFilter, setTypeFilter] = useState<"all" | "technical" | "business">("all");
 
+  // Debounce search query to reduce API calls by 80-90%
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [inspectorItem, setInspectorItem] = useState<KnowledgeItem | null>(null);
@@ -31,8 +35,8 @@ export const KnowledgeView = () => {
   const filter = useMemo(() => {
     const f: Omit<KnowledgeItemsFilter, "page" | "per_page"> = {};
 
-    if (searchQuery) {
-      f.search = searchQuery;
+    if (debouncedSearchQuery) {
+      f.search = debouncedSearchQuery;
     }
 
     if (typeFilter !== "all") {
@@ -40,7 +44,7 @@ export const KnowledgeView = () => {
     }
 
     return f;
-  }, [searchQuery, typeFilter]);
+  }, [debouncedSearchQuery, typeFilter]);
 
   // Fetch knowledge summaries with infinite scroll - loads 20 items at a time
   const {
@@ -62,8 +66,8 @@ export const KnowledgeView = () => {
     isLoading: semanticLoading,
     error: semanticError,
   } = useSemanticSearch({
-    query: searchQuery,
-    enabled: searchMode === "semantic" && searchQuery.trim().length > 0,
+    query: debouncedSearchQuery,
+    enabled: searchMode === "semantic" && debouncedSearchQuery.trim().length > 0,
     matchCount: 20,
   });
 
