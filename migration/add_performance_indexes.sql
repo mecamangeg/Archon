@@ -30,9 +30,8 @@ ON archon_document_versions(project_id);
 CREATE INDEX IF NOT EXISTS idx_code_examples_source
 ON archon_code_examples(source_id);
 
--- Index for documents by source_id (used for chunk counts and queries)
-CREATE INDEX IF NOT EXISTS idx_documents_source
-ON archon_documents(source_id);
+-- Note: Document chunks index already exists as idx_archon_crawled_pages_source_id
+-- in complete_setup.sql, so we skip it here to avoid duplication
 
 -- Verify indexes were created
 SELECT
