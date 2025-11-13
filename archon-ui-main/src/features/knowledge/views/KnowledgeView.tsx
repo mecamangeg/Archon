@@ -21,17 +21,24 @@ export const KnowledgeView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState<"simple" | "semantic">("simple");
   const [typeFilter, setTypeFilter] = useState<"all" | "technical" | "business">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [inspectorItem, setInspectorItem] = useState<KnowledgeItem | null>(null);
   const [inspectorInitialTab, setInspectorInitialTab] = useState<"documents" | "code">("documents");
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, typeFilter, searchMode]);
+
   // Build filter object for API - memoize to prevent recreating on every render
   const filter = useMemo<KnowledgeItemsFilter>(() => {
     const f: KnowledgeItemsFilter = {
-      page: 1,
-      per_page: 100,
+      page: currentPage,
+      per_page: ITEMS_PER_PAGE,
     };
 
     if (searchQuery) {
@@ -43,7 +50,7 @@ export const KnowledgeView = () => {
     }
 
     return f;
-  }, [searchQuery, typeFilter]);
+  }, [searchQuery, typeFilter, currentPage]);
 
   // Fetch knowledge summaries (no automatic polling!)
   const { data, isLoading, error, refetch, setActiveCrawlIds, activeOperations } = useKnowledgeSummaries(filter);
@@ -223,6 +230,31 @@ export const KnowledgeView = () => {
             setActiveCrawlIds((prev) => [...prev, progressId]);
           }}
         />
+
+        {/* Pagination Controls */}
+        {!displayLoading && !displayError && knowledgeItems.length > 0 && (
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+
+            <div className="text-white/70 text-sm">
+              Page {currentPage} of {Math.ceil(totalItems / ITEMS_PER_PAGE)} • Showing {knowledgeItems.length} of {totalItems} items
+            </div>
+
+            <button
+              onClick={() => setCurrentPage((p) => p + 1)}
+              disabled={currentPage >= Math.ceil(totalItems / ITEMS_PER_PAGE)}
+              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Dialogs */}
