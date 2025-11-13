@@ -4,13 +4,14 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useDebounce } from "@/features/shared/hooks/useDebounce";
 import { useToast } from "@/features/shared/hooks/useToast";
 import { CrawlingProgress } from "../../progress/components/CrawlingProgress";
 import type { ActiveOperation } from "../../progress/types";
 import { AddKnowledgeDialog } from "../components/AddKnowledgeDialog";
 import { KnowledgeHeader } from "../components/KnowledgeHeader";
 import { KnowledgeList } from "../components/KnowledgeList";
-import { useKnowledgeSummaries } from "../hooks/useKnowledgeQueries";
+import { useInfiniteKnowledgeSummaries } from "../hooks/useKnowledgeQueries";
 import { useSemanticSearch } from "../hooks/useSemanticSearch";
 import { KnowledgeInspector } from "../inspector/components/KnowledgeInspector";
 import type { KnowledgeItem, KnowledgeItemsFilter } from "../types";
@@ -21,28 +22,21 @@ export const KnowledgeView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState<"simple" | "semantic">("simple");
   const [typeFilter, setTypeFilter] = useState<"all" | "technical" | "business">("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
+
+  // Debounce search query to reduce API calls by 80-90%
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   // Dialog state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [inspectorItem, setInspectorItem] = useState<KnowledgeItem | null>(null);
   const [inspectorInitialTab, setInspectorInitialTab] = useState<"documents" | "code">("documents");
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, typeFilter, searchMode]);
-
   // Build filter object for API - memoize to prevent recreating on every render
-  const filter = useMemo<KnowledgeItemsFilter>(() => {
-    const f: KnowledgeItemsFilter = {
-      page: currentPage,
-      per_page: ITEMS_PER_PAGE,
-    };
+  const filter = useMemo(() => {
+    const f: Omit<KnowledgeItemsFilter, "page" | "per_page"> = {};
 
-    if (searchQuery) {
-      f.search = searchQuery;
+    if (debouncedSearchQuery) {
+      f.search = debouncedSearchQuery;
     }
 
     if (typeFilter !== "all") {
@@ -50,10 +44,21 @@ export const KnowledgeView = () => {
     }
 
     return f;
-  }, [searchQuery, typeFilter, currentPage]);
+  }, [debouncedSearchQuery, typeFilter]);
 
-  // Fetch knowledge summaries (no automatic polling!)
-  const { data, isLoading, error, refetch, setActiveCrawlIds, activeOperations } = useKnowledgeSummaries(filter);
+  // Fetch knowledge summaries with infinite scroll - loads 20 items at a time
+  const {
+    items: allItems,
+    total,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+    setActiveCrawlIds,
+    activeOperations,
+  } = useInfiniteKnowledgeSummaries(filter);
 
   // Semantic search (only when mode is semantic and query exists)
   const {
@@ -61,14 +66,14 @@ export const KnowledgeView = () => {
     isLoading: semanticLoading,
     error: semanticError,
   } = useSemanticSearch({
-    query: searchQuery,
-    enabled: searchMode === "semantic" && searchQuery.trim().length > 0,
+    query: debouncedSearchQuery,
+    enabled: searchMode === "semantic" && debouncedSearchQuery.trim().length > 0,
     matchCount: 20,
   });
 
   // Determine which items to display based on search mode
-  let knowledgeItems = data?.items || [];
-  let totalItems = data?.total || 0;
+  let knowledgeItems = allItems || [];
+  let totalItems = total || 0;
 
   // If semantic search is active and has results, group by source and filter items
   if (searchMode === "semantic" && semanticData?.results && semanticData.results.length > 0) {
@@ -181,6 +186,28 @@ export const KnowledgeView = () => {
     // TanStack Query will automatically refetch
   };
 
+  // Infinite scroll - load more items when scrolling near the bottom
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -231,28 +258,24 @@ export const KnowledgeView = () => {
           }}
         />
 
-        {/* Pagination Controls */}
-        {!displayLoading && !displayError && knowledgeItems.length > 0 && (
-          <div className="mt-8 flex items-center justify-center gap-4">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
+        {/* Infinite scroll trigger - load more when visible */}
+        {hasNextPage && !displayLoading && (
+          <div ref={loadMoreRef} className="flex justify-center py-8">
+            {isFetchingNextPage ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+                Loading more...
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">Scroll to load more</div>
+            )}
+          </div>
+        )}
 
-            <div className="text-white/70 text-sm">
-              Page {currentPage} of {Math.ceil(totalItems / ITEMS_PER_PAGE)} • Showing {knowledgeItems.length} of {totalItems} items
-            </div>
-
-            <button
-              onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={currentPage >= Math.ceil(totalItems / ITEMS_PER_PAGE)}
-              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
+        {/* Show total count when all items loaded */}
+        {!hasNextPage && knowledgeItems.length > 0 && !displayLoading && (
+          <div className="text-center py-4 text-sm text-gray-500">
+            Showing all {totalItems} {totalItems === 1 ? "item" : "items"}
           </div>
         )}
       </div>

@@ -3,7 +3,7 @@
  * Following TanStack Query best practices with query key factories
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useSmartPolling } from "@/features/shared/hooks";
 import { useToast } from "@/features/shared/hooks/useToast";
@@ -758,6 +758,82 @@ export function useKnowledgeSummaries(filter?: KnowledgeItemsFilter) {
     ...summaryQuery,
     activeCrawlIds,
     setActiveCrawlIds, // Export this so components can add IDs when starting operations
+    activeOperations,
+  };
+}
+
+/**
+ * Infinite Scroll Knowledge Summaries Hook
+ * Loads knowledge items page by page with infinite scroll support
+ * Optimized for fast initial load - only loads 20 items initially
+ */
+export function useInfiniteKnowledgeSummaries(filter?: Omit<KnowledgeItemsFilter, "page" | "per_page">) {
+  // Track active crawl IDs locally
+  const [activeCrawlIds, setActiveCrawlIds] = useState<string[]>([]);
+
+  // ALWAYS poll for active operations
+  const { data: activeOperationsData } = useActiveOperations(true);
+
+  // Check if we have any active operations
+  const hasActiveOperations = (activeOperationsData?.operations?.length || 0) > 0;
+
+  // Convert to the format expected by components
+  const activeOperations: ActiveOperation[] = useMemo(() => {
+    if (!activeOperationsData?.operations) return [];
+    return activeOperationsData.operations.map((op) => ({
+      ...op,
+      progressId: op.operation_id,
+      type: op.operation_type,
+    }));
+  }, [activeOperationsData]);
+
+  // Smart polling interval when there are active operations
+  const { refetchInterval } = useSmartPolling(hasActiveOperations ? STALE_TIMES.frequent : STALE_TIMES.normal);
+
+  // Infinite query for paginated data
+  const infiniteQuery = useInfiniteQuery({
+    queryKey: [...knowledgeKeys.summaries(filter), "infinite"],
+    queryFn: ({ pageParam = 1 }) =>
+      knowledgeService.getKnowledgeSummaries({
+        ...filter,
+        page: pageParam,
+        per_page: 20, // Load 20 items per page for fast initial load
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      // If we have fewer items than per_page, we've reached the end
+      if (!lastPage.items || lastPage.items.length < 20) {
+        return undefined;
+      }
+      // Return the next page number
+      return allPages.length + 1;
+    },
+    initialPageParam: 1,
+    refetchInterval: hasActiveOperations ? refetchInterval : false,
+    refetchOnWindowFocus: true,
+    staleTime: STALE_TIMES.normal,
+  });
+
+  // Flatten pages into a single items array
+  const flattenedData = useMemo(() => {
+    if (!infiniteQuery.data) {
+      return { items: [], total: 0 };
+    }
+
+    const allItems = infiniteQuery.data.pages.flatMap((page) => page.items || []);
+    const total = infiniteQuery.data.pages[0]?.total || 0;
+
+    return {
+      items: allItems,
+      total,
+    };
+  }, [infiniteQuery.data]);
+
+  return {
+    ...infiniteQuery,
+    items: flattenedData.items,
+    total: flattenedData.total,
+    activeCrawlIds,
+    setActiveCrawlIds,
     activeOperations,
   };
 }
