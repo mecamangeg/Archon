@@ -832,6 +832,13 @@ async def _perform_crawl_with_progress(
             orchestration_service = CrawlingService(crawler, supabase_client)
             orchestration_service.set_progress_id(progress_id)
 
+            # CRITICAL FIX: Use tracker from API endpoint instead of creating new one
+            # This ensures progress is tracked from the very beginning
+            orchestration_service.progress_tracker = tracker
+            safe_logfire_info(
+                f"Assigned API endpoint tracker to orchestration service | progress_id={progress_id}"
+            )
+
             # Convert request to dict for service
             request_dict = {
                 "url": str(request.url),

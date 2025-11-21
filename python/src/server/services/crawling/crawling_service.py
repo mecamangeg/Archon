@@ -200,6 +200,48 @@ class CrawlingService:
 
         return callback
 
+    async def log_crawl_error(
+        self,
+        url: str,
+        error: Exception,
+        request_data: dict = None,
+        discovery_result: str = None,
+        fallback_strategy: str = None
+    ):
+        """
+        Log crawl errors to database for debugging and pattern analysis.
+
+        Args:
+            url: URL that failed to crawl
+            error: Exception that was raised
+            request_data: Original crawl request parameters
+            discovery_result: What discovery found (llms.txt, sitemap.xml, none, etc.)
+            fallback_strategy: Which fallback strategy was used (recursive, batch, etc.)
+        """
+        try:
+            import traceback
+
+            error_data = {
+                'progress_id': self.progress_id or 'unknown',
+                'url': url,
+                'error_type': type(error).__name__,
+                'error_message': str(error),
+                'stack_trace': traceback.format_exc(),
+                'request_payload': request_data,
+                'discovery_attempted': request_data.get('auto_discovery', True) if request_data else False,
+                'discovery_result': discovery_result,
+                'fallback_strategy': fallback_strategy
+            }
+
+            await self.supabase_client.table('crawl_errors').insert(error_data).execute()
+            logger.info(
+                f"Logged crawl error to database | progress_id={self.progress_id} | "
+                f"error={type(error).__name__} | url={url}"
+            )
+        except Exception as log_err:
+            # Don't let error logging failure crash the app
+            logger.warning(f"Failed to log crawl error to database: {log_err}")
+
     async def _handle_progress_update(self, task_id: str, update: dict[str, Any]) -> None:
         """
         Handle progress updates from background task.
@@ -388,6 +430,7 @@ class CrawlingService:
 
             # Discovery phase - find the single best related file
             discovered_urls = []
+            discovery_result = None  # Track what discovery found for error logging
             # Skip discovery if the URL itself is already a discovery target (sitemap, llms file, etc.)
             is_already_discovery_target = (
                 self.url_handler.is_sitemap(url) or
@@ -420,10 +463,15 @@ class CrawlingService:
                             discovered_file_type = "unknown"
                             if self.url_handler.is_llms_variant(discovered_file):
                                 discovered_file_type = "llms.txt"
+                                discovery_result = "llms.txt"
                             elif self.url_handler.is_sitemap(discovered_file):
                                 discovered_file_type = "sitemap"
+                                discovery_result = "sitemap.xml"
                             elif self.url_handler.is_robots_txt(discovered_file):
                                 discovered_file_type = "robots.txt"
+                                discovery_result = "robots.txt"
+                            else:
+                                discovery_result = "other"
 
                             await update_mapped_progress(
                                 "discovery", 100,
@@ -435,6 +483,7 @@ class CrawlingService:
                         else:
                             safe_logfire_info(f"Skipping binary file: {discovered_file}")
                     else:
+                        discovery_result = "none"
                         safe_logfire_info(f"Discovery found no files for {url}")
                         await update_mapped_progress(
                             "discovery", 100,
@@ -729,6 +778,17 @@ class CrawlingService:
             # Log full stack trace for debugging
             logger.error("Async crawl orchestration failed", exc_info=True)
             safe_logfire_error(f"Async crawl orchestration failed | error={str(e)}")
+
+            # Log error to database for debugging and pattern analysis
+            fallback_strategy = 'discovery' if discovered_urls else 'recursive'
+            await self.log_crawl_error(
+                url=request.get('url', 'unknown'),
+                error=e,
+                request_data=request,
+                discovery_result=discovery_result,
+                fallback_strategy=fallback_strategy
+            )
+
             error_message = f"Crawl failed: {str(e)}"
             # Use ProgressMapper to get proper progress value for error state
             error_progress = self.progress_mapper.map_progress("error", 0)
